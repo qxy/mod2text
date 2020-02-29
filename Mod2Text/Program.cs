@@ -12,18 +12,19 @@ namespace Mod2Text
 
 		public static void Main(string[] args)
 		{
-			try
+			// No file specified, convert all *.mod files in current directory
+			if (args.Length < 1)
 			{
-				// Input filename
-				if (args.Length < 1)
+				string cd = Directory.GetCurrentDirectory();
+				foreach (string fileName in Directory.GetFiles(cd, "*.mod"))
 				{
-					throw new Exception("Usage: Mod2Text \"input (mod) file name\" [\"output (text) file name\"]");
-					//inFileName = "The_Mes_4.mod"; // debug
+					convertFile(fileName, fileName + ".txt");
 				}
-				else
-				{
-					inFileName = args[0];
-				}
+			}
+			// or convert the specified file only
+			else
+			{
+				inFileName = args[0];
 				// Output filename
 				if (args.Length > 1)
 				{
@@ -33,29 +34,80 @@ namespace Mod2Text
 				{
 					outFileName = inFileName + ".txt";
 				}
+				convertFile(inFileName, outFileName);
+			}
+			Console.WriteLine("Finished.");
+			Console.Write("Press any key to continue...");
+			Console.ReadKey(true);
+		}
+
+		private static void convertFile(string inFileName, string outFileName)
+		{
+			try
+			{
+				Console.WriteLine("Converting " + Path.GetFileName(inFileName));
+				// Read input file
+				byte[] buff = File.ReadAllBytes(inFileName);
+
+				// check Id
+				char[] temp = new char[4];
+				for (int c = 0; c < 4; c++)
+				{
+					temp[c] = (char)buff[1080 + c];
+				}
+				string id = new string(temp);
+				numCh = getNumCh(id);
 
 				// Create a file to write to
 	            using (StreamWriter sw = File.CreateText(outFileName))
 	            {
-					// Process input file
-					byte[] buff = File.ReadAllBytes(inFileName);
-
 					// song title
-					char[] temp = new char[20];
-					int i = 0; while (i < 20 && buff[i] != 0) temp[i] = (char)buff[i++];
-					songTitle = new string(temp);
+					songTitle = "";
+					for (int c = 0; c < 20; c++)
+					{
+						if (buff[c] != 0) songTitle += (char)buff[c];
+					}
+
 					// song length
 					songLength = (int)buff[950];
-					// Id
-					temp = new char[4];
-					for (i = 0; i < 4; i++) temp[i] = (char)buff[1080 + i];
-					string id = new string(temp);
-					numCh = getNumCh(id);
+
 					// print out data
 					sw.WriteLine("Title: " + songTitle);
-					sw.WriteLine("Length: " + songLength + " patterns");
 					sw.WriteLine("Channels: " + numCh);
+					sw.WriteLine("Length: " + songLength);
 					sw.WriteLine();
+
+					// pattern play sequence
+					string playSeq = "Play sequence:";
+					for (int p = 0; p < songLength; p++)
+					{
+						int next = buff[952 + p];
+						playSeq += string.Format(" {0:D3}", next);
+					}
+					sw.WriteLine(playSeq);
+					sw.WriteLine();
+
+					sw.WriteLine("Instruments:");
+					// read instruments
+					for (int i = 0; i < 31; i++)
+					{
+						int ip = 20 + i * 30;
+						// instrument name
+						string iName = "";
+						for (int c = 0; c < 22; c++)
+						{
+							if (buff[ip + c] != 0) iName += (char)buff[ip + c];
+						}
+						// instrument length
+						int iLength = ((buff[ip + 22] << 8) | buff[ip + 23]) * 2;
+						// skip empty instuments
+						if (iLength > 0)
+						{
+							sw.WriteLine(string.Format("N:{0:X2} L:{1:X4} - {2}", i + 1, iLength, iName));
+						}
+					}
+					sw.WriteLine();
+
 					// read patterns
 					for (int p = 0; p < songLength; p++)
 					{
@@ -90,16 +142,10 @@ namespace Mod2Text
 						sw.WriteLine();
 					}
 	            }
-	            Console.WriteLine("Conversion done!");
 			}
 			catch (Exception e)
 			{
 				Console.WriteLine(e.Message);
-			}
-			finally
-			{
-				Console.Write("Press any key to continue . . . ");
-				Console.ReadKey(true);
 			}
 		}
 
@@ -121,7 +167,7 @@ namespace Mod2Text
 					return 8;
 
 				default:
-					throw new Exception("Unknown mod Id!");
+					throw new Exception("Unknown Id or not a module file!");
 			}
 		}
 
