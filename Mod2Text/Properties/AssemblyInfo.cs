@@ -10,11 +10,11 @@ using System.Runtime.InteropServices;
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
 [assembly: AssemblyTitle("Mod2Text")]
-[assembly: AssemblyDescription("")]
-[assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("")]
+[assembly: AssemblyDescription("Simple command line tool to convert music module format files to text representation")]
+[assembly: AssemblyConfiguration("Release")]
+[assembly: AssemblyCompany("innerspace Research")]
 [assembly: AssemblyProduct("Mod2Text")]
-[assembly: AssemblyCopyright("Copyright 2020")]
+[assembly: AssemblyCopyright("(c) 2020, QXY^iR")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
