@@ -59,8 +59,8 @@ namespace Mod2Text
 				numCh = getNumCh(id);
 
 				// Create a file to write to
-	            using (StreamWriter sw = File.CreateText(outFileName))
-	            {
+				using (StreamWriter sw = File.CreateText(outFileName))
+				{
 					// song title
 					songTitle = "";
 					for (int c = 0; c < 20; c++)
@@ -141,7 +141,7 @@ namespace Mod2Text
 						}
 						sw.WriteLine();
 					}
-	            }
+				}
 			}
 			catch (Exception e)
 			{
