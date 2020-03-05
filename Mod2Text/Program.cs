@@ -153,18 +153,39 @@ namespace Mod2Text
 		{
 			switch (id)
 			{
-				case "M.K.":
-				case "M!K!":
-				case "4CHN":
-				case "4FLT":
+				case "M.K.": // standard 4-channel, 64-pattern-max MOD
+				case "M!K!": // ProTracker will write this if there's more than 64 patterns
+				case "M&K!": // This is just a standard MOD, but with a weird tag
+				case "4CHN": // 4-channel MODs
 					return 4;
 
-				case "6CHN":
-					return 6;
+				//* NOT SUPPORTING THESE (YET) *//
+				case "6CHN": // 6-channel MODs, read like a 4 channel mod, but with 6 channels per row
+				case "8CHN": // 8-channel MODs, read like a 4 channel mod, but with 8 channels per row
 
-				case "8CHN":
+				case "CD81": // other 8-channel MOD tags, Oktalyzer / OctaMED
+				case "OKTA":
+				case "OCTA":
+
+				case "2CHN": // a 2 channel MOD. This is handled by FastTracker
+
+				case "TDZ1": // allegedly this is a TakeTracker extension
+				case "TDZ2": //  for 1, 2, and 3 channels respectively
+				case "TDZ3":
+
+				case "5CHN": // allegedly this is a TakeTracker extension
+				case "7CHN": //  for 5, 7, and 8 channels respectively
+				case "9CHN":
+
+				case "FLT4": // StarTrekker 4-channel MOD
+				case "4FLT":
+
+				case "FLT8": // StarTrekker 8-channel MOD
 				case "8FLT":
-					return 8;
+
+				case "xxCH": // 10+ channel MOD, xx being a decimal number
+				case "xxCN":
+					throw new Exception("This format is not supported!");
 
 				default:
 					throw new Exception("Unknown Id or not a module file!");
