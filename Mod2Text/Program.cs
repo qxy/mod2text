@@ -46,17 +46,11 @@ namespace Mod2Text
 			try
 			{
 				Console.WriteLine("Converting " + Path.GetFileName(inFileName));
+				// check Id
+				numCh = getNumCh(getId(inFileName));
+
 				// Read input file
 				byte[] buff = File.ReadAllBytes(inFileName);
-
-				// check Id
-				char[] temp = new char[4];
-				for (int c = 0; c < 4; c++)
-				{
-					temp[c] = (char)buff[1080 + c];
-				}
-				string id = new string(temp);
-				numCh = getNumCh(id);
 
 				// Create a file to write to
 				using (StreamWriter sw = File.CreateText(outFileName))
@@ -149,7 +143,22 @@ namespace Mod2Text
 			}
 		}
 
-		private static int getNumCh(String id)
+		private static string getId(string fileName)
+		{
+			string id = "";
+			using (FileStream fs = File.OpenRead(fileName))
+			{
+				fs.Seek(1080, SeekOrigin.Begin);
+				for (int c = 0; c < 4; c++)
+				{
+					int nextByte = fs.ReadByte();
+					if (nextByte != -1) id += (char)nextByte;
+				}
+			}
+			return id;
+		}
+
+		private static int getNumCh(string id)
 		{
 			switch (id)
 			{
