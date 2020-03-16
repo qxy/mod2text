@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.IO;
 
 namespace Mod2Text
@@ -9,6 +10,8 @@ namespace Mod2Text
 
 		private static string songTitle;
 		private static int songLength, numCh;
+
+		private static Hashtable mop = new Hashtable();
 
 		public static void Main(string[] args)
 		{
@@ -51,6 +54,8 @@ namespace Mod2Text
 
 				// Read input file
 				byte[] buff = File.ReadAllBytes(inFileName);
+				// Read pattern name file (if exists)
+				readMop(inFileName);
 
 				// Create a file to write to
 				using (StreamWriter sw = File.CreateText(outFileName))
@@ -66,22 +71,16 @@ namespace Mod2Text
 					songLength = (int)buff[950];
 
 					// print out data
+					int sLen = 8 + songTitle.Length;
+					printSeparator(sw, sLen);
 					sw.WriteLine("Title: " + songTitle);
 					sw.WriteLine("Channels: " + numCh);
 					sw.WriteLine("Length: " + songLength);
-					sw.WriteLine();
-
-					// pattern play sequence
-					string playSeq = "Play sequence:";
-					for (int p = 0; p < songLength; p++)
-					{
-						int next = buff[952 + p];
-						playSeq += string.Format(" {0:D3}", next);
-					}
-					sw.WriteLine(playSeq);
+					printSeparator(sw, sLen);
 					sw.WriteLine();
 
 					sw.WriteLine("Instruments:");
+					printSeparator(sw, 12);
 					// read instruments
 					for (int i = 0; i < 31; i++)
 					{
@@ -90,25 +89,51 @@ namespace Mod2Text
 						string iName = "";
 						for (int c = 0; c < 22; c++)
 						{
-							if (buff[ip + c] != 0) iName += (char)buff[ip + c];
+							if (buff[ip + c] != 0) iName += (char)buff[ip + c]; else iName += " ";
 						}
 						// instrument length
 						int iLength = ((buff[ip + 22] << 8) | buff[ip + 23]) * 2;
 						// skip empty instuments
 						if (iLength > 0)
 						{
-							sw.WriteLine(string.Format("N:{0:X2} L:{1:X4} - {2}", i + 1, iLength, iName));
+							sw.WriteLine(string.Format("[{0:X2}] [{1:X4}] [{2}]", i + 1, iLength, iName));
+						}
+					}
+					sw.WriteLine();
+
+					// pattern play sequence
+					sw.WriteLine("Play sequence:");
+					printSeparator(sw, 14);
+
+					for (int p = 0; p < songLength; p++)
+					{
+						int next = buff[952 + p];
+						// pattern names?
+						if (mop.Count > 0)
+						{
+							printPatternInfo(sw, p, next);
+						}
+						else
+						{
+							sw.Write("[{0:D2}] ", next);
+							if ((p + 1) % 8 == 0 || p == songLength - 1)
+							{
+								sw.WriteLine();
+							}
 						}
 					}
 					sw.WriteLine();
 
 					// read patterns
+					sLen = (mop.Count > 0 ? 43 : 24);
 					for (int p = 0; p < songLength; p++)
 					{
 						int next = buff[952 + p];
 						byte[] pattern = getPattern(buff, next);
-						sw.WriteLine(string.Format("[Pattern: {0:D3}]", next));
-
+						printSeparator(sw, sLen);
+						printPatternInfo(sw, p, next);
+						printSeparator(sw, sLen);
+						// pattern notes
 						for (int line = 0; line < 64; line++)
 						{
 							string text = "|";
@@ -141,6 +166,26 @@ namespace Mod2Text
 			{
 				Console.WriteLine(e.Message);
 			}
+		}
+
+		private static void printSeparator(StreamWriter sw, int len)
+		{
+			for (int c = 0; c < len; c++)
+			{
+				sw.Write("=");
+			}
+			sw.WriteLine();
+		}
+
+		private static void printPatternInfo(StreamWriter sw, int pos, int num)
+		{
+			sw.Write(string.Format("[Pos: {0:D3}] [Pattern: {1:D2}]", pos, num));
+
+			if (mop.Contains(num))
+			{
+				sw.Write(string.Format(" [{0}]", mop[num]));
+			}
+			sw.WriteLine();
 		}
 
 		private static string getId(string fileName)
@@ -198,6 +243,38 @@ namespace Mod2Text
 
 				default:
 					throw new Exception("Unknown Id or not a module file!");
+			}
+		}
+
+		private static void readMop(string fileName)
+		{
+			string cDir = Path.GetDirectoryName(fileName);
+			string modName = Path.GetFileNameWithoutExtension(fileName);
+			string mopFile = Path.Combine(cDir, modName + ".mop");
+
+			mop.Clear();
+			// read pattern names file
+			if (File.Exists(mopFile))
+			{
+				FileInfo fi = new FileInfo(mopFile);
+				if (fi.Length != 1600) return;
+
+				byte[] mopData = File.ReadAllBytes(mopFile);
+
+				for (int p = 0; p < fi.Length / 16; p++)
+				{
+					// pattern name
+					string pName = "";
+					bool empty = true;
+					for (int c = 0; c < 16; c++)
+					{
+						int pp = p * 16;
+						byte next = mopData[pp + c];
+						if (next != 0) pName += (char)next; else pName += " ";
+						if (next != 0 && next != 32) empty = false;
+					}
+					if (!empty) mop.Add(p, pName);
+				}
 			}
 		}
 
