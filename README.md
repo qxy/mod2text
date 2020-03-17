@@ -7,7 +7,7 @@ Simple command line tool to convert music module format files to text representa
 **Usage:** mod2text  \[inputFileName] \[outputFileName]
 - when input file not specified, processes all files in the current directory
 - when output file not specified, uses the input file name with ".txt" added
-- if you have pattern name file, rename it from "mod!fileName" to "fileName.pat"
+- if you have pattern name file, rename it from "mod!fileName" to "fileName.mop"
 
 ------------
 
